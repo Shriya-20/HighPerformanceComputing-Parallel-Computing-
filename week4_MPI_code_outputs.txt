@@ -1,0 +1,262 @@
+1.
+#include <stdio.h>
+#include <mpi.h>
+#include <math.h>
+
+int main(int argc, char **argv) {
+    int rank, size;
+    int x = 2; // Example constant value for x
+    double result;
+
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+
+    // Get the rank and size of the processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Compute pow(x, rank)
+    result = pow(x, rank);
+
+    // Print the result from each process
+    printf("Process %d of %d: pow(%d, %d) = %.2f\n", rank, size, x, rank, result);
+
+    // Finalize MPI
+    MPI_Finalize();
+
+    return 0;
+}
+
+
+dse240@telnet:~/hpc/220968020/week4$ mpicc -o q1 q1.c -lm
+dse240@telnet:~/hpc/220968020/week4$ mpirun -np 4 ./q1
+Process 0 of 4: pow(2, 0) = 1.00
+Process 1 of 4: pow(2, 1) = 2.00
+Process 2 of 4: pow(2, 2) = 4.00
+Process 3 of 4: pow(2, 3) = 8.00
+dse240@telnet:~/hpc/220968020/week4$
+
+2.
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char **argv) {
+    int rank, size;
+
+    MPI_Init(&argc, &argv);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    if (rank % 2 == 0) {
+        printf("Process %d of %d: Hello\n", rank, size);
+    } else {
+        printf("Process %d of %d: World\n", rank, size);
+    }
+
+    MPI_Finalize();
+
+    return 0;
+}
+
+output:
+dse240@telnet:~/hpc/220968020/week4$ mpicc -o q q2.c
+dse240@telnet:~/hpc/220968020/week4$ mpirun -np 6 ./q
+Process 4 of 6: Hello
+Process 3 of 6: World
+Process 5 of 6: World
+Process 2 of 6: Hello
+Process 0 of 6: Hello
+Process 1 of 6: World
+
+3.
+
+#include <stdio.h>
+#include <mpi.h>
+       
+int main(int argc, char **argv) {
+    int rank, size;
+    double a = 10.0, b = 5.0; // Example values for operations
+    double result;
+
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+
+    // Get the rank and size of the processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Check the number of processes
+    if (size < 4) {
+        if (rank == 0) {
+            printf("This program requires at least 4 processes.\n");
+        }
+        MPI_Finalize();
+        return 1;
+    }
+
+    // Perform different operations based on the rank
+    switch (rank) {
+        case 0:
+            // Addition
+            result = a + b;
+            printf("Process %d: Addition: %.2f + %.2f = %.2f\n", rank, a, b, result);
+            break;
+        case 1:
+            // Subtraction
+            result = a - b;
+            printf("Process %d: Subtraction: %.2f - %.2f = %.2f\n", rank, a, b, result);
+            break;
+        case 2:
+            // Multiplication
+            result = a * b;
+            printf("Process %d: Multiplication: %.2f * %.2f = %.2f\n", rank, a, b, result);
+            break;
+        case 3:
+            // Division
+            if (b != 0) {
+                result = a / b;
+                printf("Process %d: Division: %.2f / %.2f = %.2f\n", rank, a, b, result);
+            } else {
+                printf("Process %d: Division by zero error!\n", rank);
+            }
+            break;
+        default:
+            // Additional processes do nothing
+            printf("Process %d: No operation assigned.\n", rank);
+            break;
+    }
+
+    // Finalize MPI
+    MPI_Finalize();
+
+    return 0;
+}
+
+or
+
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char* argv[]) {
+    int rank, size;
+    int result = 0;
+    int operand1 = 10; 
+    int operand2 = 5; 
+
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+
+    // Get the rank and size of the processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Perform arithmetic operations based on process rank
+    if (rank == 0) { // Addition
+        result = operand1 + operand2;
+        printf("Process %d: %d + %d = %d\n", rank, operand1, operand2, result);
+    }
+    else if (rank == 1) { // Subtraction
+        result = operand1 - operand2;
+        printf("Process %d: %d - %d = %d\n", rank, operand1, operand2, result);
+    }
+    else if (rank == 2) { // Multiplication
+        result = operand1 * operand2;
+        printf("Process %d: %d * %d = %d\n", rank, operand1, operand2, result);
+    }
+    else if (rank == 3) { // Division
+        if (operand2 != 0) {
+            result = operand1 / operand2;
+            printf("Process %d: %d / %d = %d\n", rank, operand1, operand2, result);
+        }
+        else {
+            printf("Process %d: Cannot divide by zero.\n", rank);
+        }
+    }
+    MPI_Finalize();
+
+    return 0;
+}
+
+
+output:
+dse240@telnet:~/hpc/220968020/week4$ mpicc -o q q3.c
+dse240@telnet:~/hpc/220968020/week4$ mpirun -np 4 ./q
+Process 0: 10 + 5 = 15
+Process 2: 10 * 5 = 50
+Process 3: 10 / 5 = 2
+Process 1: 10 - 5 = 5
+
+
+4.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <mpi.h>
+
+#define MAX_STRING_LENGTH 100
+
+int main(int argc, char* argv[]) {
+    int rank, size;
+    char str[MAX_STRING_LENGTH] = "HeLLO"; // The input string
+    char toggled_char;
+
+    MPI_Init(&argc, &argv);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Ensure that the input string length is greater than the number of processes
+	Each process is responsible for toggling a character in the string based on its rank. Therefore, if the 	number of processes exceeds the length of the string, some processes will not have a character to work on, 	which could lead to incorrect or undefined behavior.
+
+    int string_length = strlen(str);
+    if (string_length < size) {
+        if (rank == 0) {
+            printf("Error: Length of input string is shorter than the number of processes.\n");
+        }
+        MPI_Finalize();
+        return 1;
+    }
+
+    // Toggle the character indexed by the rank of the process
+    if (rank < string_length) {
+        if (str[rank] >= 'a' && str[rank] <= 'z') {
+            toggled_char = str[rank] - 32; // Toggle lowercase to uppercase
+        }
+        else if (str[rank] >= 'A' && str[rank] <= 'Z') {
+            toggled_char = str[rank] + 32; // Toggle uppercase to lowercase
+        }
+        else {
+            // If the character is not an alphabet, keep it unchanged
+            toggled_char = str[rank];
+        }
+
+        printf("Process %d: Toggled character '%c' to '%c'\n", rank, str[rank], toggled_char);
+    }
+
+    // Finalize MPI
+    MPI_Finalize();
+
+    return 0;
+}
+
+output:
+dse240@telnet:~/hpc/220968020/week4$ mpirun -np 5 ./q
+Process 0: Toggled character 'H' to 'h'
+Process 2: Toggled character 'L' to 'l'
+Process 4: Toggled character 'O' to 'o'
+Process 1: Toggled character 'e' to 'E'
+Process 3: Toggled character 'L' to 'l'
+
+--------------------------------------------------------------------------
+
+dse240@telnet:~/hpc/220968020/week4$ mpirun -np 3 ./q
+Process 1: Toggled character 'e' to 'E'
+Process 2: Toggled character 'L' to 'l'
+Process 0: Toggled character 'H' to 'h'
+dse240@telnet:~/hpc/220968020/week4$       
+
+

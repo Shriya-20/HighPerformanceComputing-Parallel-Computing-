@@ -1,0 +1,72 @@
+q1.
+
+#include <stdio.h>
+#include "mpi.h"
+
+// Function to compute factorial
+int factorial(int n) {
+    int result = 1;
+    for (int i = 1; i <= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+
+int main(int argc, char *argv[]) {
+    int rank, size;
+    int values[100];  // Static array to hold the values (adjust size as needed)
+    int value, factorial_result;
+    int sum_of_factorials = 0;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    if (rank == 0) {
+        // Root process reads N values
+        if (size > 100) {
+            printf("Error: The number of processes exceeds the maximum array size.\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
+        printf("Enter %d values:\n", size);
+        for (int i = 0; i < size; i++) {
+            scanf("%d", &values[i]);
+        }
+    }
+
+    // Scatter values to all processes
+    MPI_Scatter(values, 1, MPI_INT, &value, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Compute factorial of the received value
+    factorial_result = factorial(value);
+
+    // Gather factorial results at the root process
+    MPI_Gather(&factorial_result, 1, MPI_INT, values, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        // Root process calculates the sum of all factorials
+        for (int i = 0; i < size; i++) {
+            sum_of_factorials += values[i];
+        }
+        printf("Sum of all factorials: %d\n", sum_of_factorials);
+    }
+
+    MPI_Finalize();
+    return 0;
+}
+
+output:
+dse240@telnet:~/hpc/220968020/week6$ mpirun -n 4 ./q
+Enter 4 values:
+1
+2
+3
+4
+Sum of all factorials: 33
+
+
+
+q2.
+
+

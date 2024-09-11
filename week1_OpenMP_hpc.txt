@@ -1,0 +1,259 @@
+
+week1
+
+q1
+#include<stdio.h>
+
+int reverse(int num){
+        int dig;
+        int rev=0;
+        while(num>0){
+                dig=num%10;
+                rev=rev*10+dig;
+                num=num/10;
+        }
+        return rev;
+}
+
+int main(){
+        printf("Hello\n");
+        int arr[9]={18,523,301,1234,2,14,108,150,1928};
+        int n=sizeof(arr)/sizeof(arr[0]);
+        int a[4];
+       for(int i=0;i<n;i++){
+                a[i]=reverse(arr[i]);
+       }
+       for(int i=0;i<n;i++){
+               printf("%d ",a[i]);
+       }
+       printf("\n");
+        return 0;
+}
+
+q2
+#include<stdio.h>
+
+
+int main(){
+        int num1;
+        int num2;
+        printf("Enter num1: ");
+        scanf("%d",&num1);
+
+        printf("Enter num2: ");
+        scanf("%d",&num2);
+        char op;
+
+        printf("Enter operator: ");
+        scanf(" %c",&op);
+        printf("%c",op);
+       printf("\n");
+        return 0;
+}
+
+q3
+#include<stdio.h>
+#include<string.h>
+
+
+int main(){
+        char str[20];
+        printf("Enter string: ");
+
+        scanf("%[^\n]%*c",str);
+        printf("string: %s\n",str);
+        int n=strlen(str);
+
+        for(int i=0;str[i]!='\0';i++){
+                if(str[i]>='A' && str[i]<='Z'){
+                        str[i]=str[i]+'a'-'A';
+                }
+
+                else if(str[i]>='a' && str[i]<='z'){
+                        str[i]=str[i]+'A'-'a';
+                }
+        }
+        printf("new string: %s",str);
+       printf("\n");
+        return 0;
+}
+
+q4 
+#include<stdio.h>
+#include<string.h>
+
+
+int main(){
+        int n;
+        printf("Enter string length: ");
+        scanf("%d",&n);
+        char str[n];
+        printf("Enter string: ");
+        scanf(" %[^\n]%*c",str);
+        //printf("string: %s\n",str);
+
+        int j;
+        for(int i=0;i<n;i++){
+                j=i+1;
+                while(j>=1){
+                        printf("%c",str[i]);
+                        j--;
+                }
+        }
+
+       printf("\n");
+        return 0;
+}
+
+q5
+#include<stdio.h>
+#include<string.h>
+
+
+int main(){
+        int n;
+        printf("Enter string length: ");
+        scanf("%d",&n);
+        char str1[n];char str2[n];
+        printf("Enter string1: ");
+        scanf(" %[^\n]%*c",str1);
+        printf("string1: %s\n",str1);
+
+        printf("Enter string2: ");
+        scanf(" %[^\n]%*c",str2);
+        printf("string2: %s\n",str2);
+
+        char result[n+n];
+        int j=0;
+        for(int i=0;i<n;i++){
+                result[j]=str1[i];
+                j++;
+                result[j]=str2[i];
+                j++;
+        }
+        printf("New string: %s",result);
+		
+
+       printf("\n");
+        return 0;
+}
+
+q6
+#include <stdio.h>
+
+int main(){
+int R1,C1,R2,C2;
+printf("Enter row1,col1,row2,col2: ");
+scanf("%d %d %d %d",&R1,&C1,&R2,&C2);
+
+if (C1 != R2) {
+        printf("The number of columns in M-1 must be "
+               "equal to the number of rows in "
+               "M-2.\n");
+    }
+
+int m1[R1][C1];
+int m2[R2][C2];
+printf("Enter m1:\n");
+for (int j = 0; j < R1; j++) {
+     for (int i = 0; i < C1; i++) {
+           scanf("%d",&m1[i][j]);
+     }
+}
+printf("Enter m2:\n");
+for (int j = 0; j < R2; j++) {
+     for (int i = 0; i < C2; i++) {
+           scanf("%d",&m2[i][j]);
+     }
+}
+int result[R1][C2];
+for(int i = 0; i < R1; i++) {
+ for (int j = 0; j < C2; j++) {
+            result[i][j] = 0;
+
+            for (int k = 0; k < R2; k++) {
+                result[i][j] += m1[i][k] * m2[k][j];
+            }
+
+            printf("%d\t", result[i][j]);
+        }
+
+        printf("\n");
+
+}
+
+
+}
+
+++++++++++++++++++++++++++++++++++++++++++
+
+week2
+
+q1. 1.	Write a OpenMP program to calculate 𝑝𝑜𝑤(𝑖, 𝑥) for all the threads where 𝑖 is an integer value and 𝑥 is the thread_Id.
+
+#include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int main()
+{       int i;
+        printf("Enter i: ");
+        scanf("%d",&i);
+    // Beginning of parallel region
+    #pragma omp parallel
+    {   int p=pow(i,omp_get_thread_num());
+
+        printf("pow(%d,%d) is %d\n",
+               i,omp_get_thread_num(),p);
+    }
+    // Ending of parallel region
+}
+---------------------------------------
+
+q2. Write a OpenMP program that performs the sum of even numbers and odd numbers in a given input array. Create a separate thread to perform the sum     of even numbers and odd numbers.
+
+#include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int main()
+{       int n;
+        printf("Enter n: ");
+        scanf("%d",&n);
+        int arr[n];
+        printf("Enter array:\n");
+        for(int i=0;i<n;i++){
+                scanf("%d",&arr[i]);
+        }
+        int o_sum=0;
+        int e_sum=0;
+    
+	// Beginning of parallel region
+    #pragma omp parallel num_threads(2)
+    {   if(omp_get_thread_num()==0){
+                for(int j=0;j<n;j++){
+                        if(arr[j]%2){
+                                o_sum+=arr[j];
+                        }
+                }
+        }
+
+
+        if(omp_get_thread_num()==1){
+                for(int j=0;j<n;j++){
+                        if(arr[j]%2==0){
+                                e_sum+=arr[j];
+                        }
+                }
+        }
+    }
+    // Ending of parallel region
+
+    printf("Even sum: %d\nodd sum: %d\n",e_sum,o_sum);
+}
+--------------------------------
+
+q3. 3.	Write a OpenMP program to implement all the four basic operations of a calculator (Add, Sub, Mul, Div). Create a separate thread to perform the operations
+
