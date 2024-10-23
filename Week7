@@ -1,196 +1,225 @@
-q1)
+Q1: Write a program in CUDA to add two vectors using
+    a) block size as N
+    b) N threads
+    c) Varying block size to handle N elements with thread size constant as 256
 
-#include<stdio.h>
+#include <stdio.h>
 
-__global__ void block_add(float *out, float *a, float *b) {
-    int i = blockIdx.x;
-    out[i] = a[i] + b[i];     
+// Kernel to add two vectors using block size as N
+__global__ void addBlocks(float *res, float *v1, float *v2) {
+    int idx = blockIdx.x;
+    res[idx] = v1[idx] + v2[idx];     
 }
 
-__global__ void thread_add(float *out, float *a, float *b) {
-    int i = threadIdx.x;
-    out[i] = a[i] + b[i];     
+// Kernel to add two vectors using N threads
+__global__ void addThreads(float *res, float *v1, float *v2) {
+    int idx = threadIdx.x;
+    res[idx] = v1[idx] + v2[idx];     
 }
 
-__global__ void var_add(float *out, float *a, float *b, int n) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if(i < n) out[i] = a[i] + b[i];     
+// Kernel to add two vectors with varying block size
+__global__ void addVarBlocks(float *res, float *v1, float *v2, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (idx < n) res[idx] = v1[idx] + v2[idx];     
 }
 
-int main(){
-    cudaMemcpyKind htd = cudaMemcpyHostToDevice, dth = cudaMemcpyDeviceToHost;
+int main() {
+    cudaMemcpyKind h2d = cudaMemcpyHostToDevice, d2h = cudaMemcpyDeviceToHost;
     int n;
     printf("Enter size: ");
     scanf("%d", &n);
     
-    float a[n], b[n], out[n];
-    float *da, *db, *dout;
+    float v1[n], v2[n], res[n];
+    float *d_v1, *d_v2, *d_res;
 
-    cudaMalloc((void**)&da, sizeof(float) * n);
-    cudaMalloc((void**)&db, sizeof(float) * n);
-    cudaMalloc((void**)&dout, sizeof(float) * n);
+    cudaMalloc((void**)&d_v1, sizeof(float) * n);
+    cudaMalloc((void**)&d_v2, sizeof(float) * n);
+    cudaMalloc((void**)&d_res, sizeof(float) * n);
 
-    printf("Enter a: ");
-    for(int i = 0; i < n; i++)
-        scanf("%f", a + i);
+    printf("Enter v1: ");
+    for (int i = 0; i < n; i++)
+        scanf("%f", v1 + i);
     
-    printf("Enter b: ");
-    for(int i = 0; i < n; i++)
-        scanf("%f", b + i);
+    printf("Enter v2: ");
+    for (int i = 0; i < n; i++)
+        scanf("%f", v2 + i);
 
-    cudaMemcpy(da, a, sizeof(float) * n, htd);
-    cudaMemcpy(db, b, sizeof(float) * n, htd);
-    cudaMemcpy(dout, out, sizeof(float) * n, htd);
+    // Copy input vectors to device
+    cudaMemcpy(d_v1, v1, sizeof(float) * n, h2d);
+    cudaMemcpy(d_v2, v2, sizeof(float) * n, h2d);
+    
+    // Perform vector addition using block size as N
+    addBlocks<<<n, 1>>>(d_res, d_v1, d_v2);
+    cudaMemcpy(res, d_res, n * sizeof(float), d2h);
 
-    block_add<<<n, 1>>>(dout, da, db);
-    cudaMemcpy(out, dout, n * sizeof(float), dth);
-
-    for(int i = 0; i < n; i++)
-        printf("%f ", out[i]);
+    for (int i = 0; i < n; i++)
+        printf("%f ", res[i]);
     printf("\n");
 
-    thread_add<<<1, n>>>(dout, da, db);
-    cudaMemcpy(out, dout, n * sizeof(float), dth);
+    // Perform vector addition using N threads
+    addThreads<<<1, n>>>(d_res, d_v1, d_v2);
+    cudaMemcpy(res, d_res, n * sizeof(float), d2h);
     
-    for(int i = 0; i < n; i++)
-        printf("%f ", out[i]);
+    for (int i = 0; i < n; i++)
+        printf("%f ", res[i]);
     printf("\n");
 
-    var_add<<<ceil(n/256.0), 256>>>(dout, da, db, n);
-    cudaMemcpy(out, dout, n * sizeof(float), dth);
+    // Perform vector addition with varying block sizes
+    addVarBlocks<<<ceil(n / 256.0), 256>>>(d_res, d_v1, d_v2, n);
+    cudaMemcpy(res, d_res, n * sizeof(float), d2h);
     
-    for(int i = 0; i < n; i++)
-        printf("%f ", out[i]);
+    for (int i = 0; i < n; i++)
+        printf("%f ", res[i]);
     printf("\n");
     
-    cudaFree(da);
-    cudaFree(db);
-    cudaFree(dout);
+    cudaFree(d_v1);
+    cudaFree(d_v2);
+    cudaFree(d_res);
 
+    return 0;
 }
 
-q2)
+Q2: Write a program in CUDA which performs convolution operation on the input N elements
+using a mask array with M elements to produce the resultant N elements.
 
-#include<stdio.h>
-__global__ void convolution(int* x, int* f, int* r, int n, int m){
-    int i = threadIdx.x, j = threadIdx.y;
-    if(m-1 - j + i < n) atomicAdd(r + (m-1 - j + i), x[i] * f[j]);
+#include <stdio.h>
+
+// Kernel to perform convolution operation
+__global__ void convKernel(int* input, int* mask, int* output, int n, int m) {
+    int i = threadIdx.x;
+    int j = threadIdx.y;
+    // Calculate output only if within bounds
+    if (m - 1 - j + i < n) 
+        atomicAdd(output + (m - 1 - j + i), input[i] * mask[j]);
 }
 
-int main(){
-    cudaMemcpyKind htd = cudaMemcpyHostToDevice,
-                   dth = cudaMemcpyDeviceToHost;
+int main() {
+    cudaMemcpyKind h2d = cudaMemcpyHostToDevice, d2h = cudaMemcpyDeviceToHost;
 
-    int n, m, s = sizeof(int);
-    printf("Enter n, m: ");
+    int n, m;
+    printf("Enter input size and mask size: ");
     scanf("%d %d", &n, &m);
 
-    int x[n], f[m], r[n];
-    printf("Enter array: ");
-    for(int i = 0; i < n; i++){
-        scanf("%d", x + i);
-        r[i] = 0;
+    int input[n], mask[m], output[n];
+    printf("Enter input array: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", input + i);
+        output[i] = 0; // Initialize output array
     }
 
-    printf("Enter mask: ");
-    for(int i = 0; i < m; i++)
-        scanf("%d", f + i);
+    printf("Enter mask array: ");
+    for (int i = 0; i < m; i++)
+        scanf("%d", mask + i);
 
+    int *d_input, *d_mask, *d_output;
+
+    cudaMalloc((void**)&d_input, sizeof(int) * n);
+    cudaMalloc((void**)&d_mask, sizeof(int) * m);
+    cudaMalloc((void**)&d_output, sizeof(int) * n);
     
-    int *d_x, *d_f, *d_r;
-    
-    cudaMalloc((void**)&d_x, s * n);
-    cudaMalloc((void**)&d_f, s * m);
-    cudaMalloc((void**)&d_r, s * n);
-    
-    cudaMemcpy(d_x, x, s * n, htd);
-    cudaMemcpy(d_f, f, s * m, htd);
-    cudaMemcpy(d_r, r, s * n, htd);
+    cudaMemcpy(d_input, input, sizeof(int) * n, h2d);
+    cudaMemcpy(d_mask, mask, sizeof(int) * m, h2d);
+    cudaMemcpy(d_output, output, sizeof(int) * n, h2d);
     
     dim3 threads(n, m, 1);
-    convolution<<<1, threads>>>(d_x, d_f, d_r, n, m);
+    convKernel<<<1, threads>>>(d_input, d_mask, d_output, n, m);
 
-    cudaMemcpy(r, d_r, s * n, dth);
-    for(int i = 0; i < n; i++)
-        printf("%d ", r[i]);
+    cudaMemcpy(output, d_output, sizeof(int) * n, d2h);
+    for (int i = 0; i < n; i++)
+        printf("%d ", output[i]);
     printf("\n");
 
+    cudaFree(d_input);
+    cudaFree(d_mask);
+    cudaFree(d_output);
+
+    return 0;
 }
 
+Q3: Write a program in CUDA to perform linear algebra function of the form y = αx + y, where
+x and y are vectors and α is a scalar value.
 
+#include <stdio.h>
 
-
-q3)
-
-#include<stdio.h>
-
-__global__ void linear(int a, int* x, int* y){
-    int i = threadIdx.x;
-    y[i] += a * x[i];
+// Kernel to perform linear operation y = αx + y
+__global__ void linTransform(int alpha, int* xVec, int* yVec) {
+    int idx = threadIdx.x;
+    yVec[idx] += alpha * xVec[idx]; // Update output vector
 }
 
-int main(){
-    cudaMemcpyKind htd = cudaMemcpyHostToDevice, 
-                   dth = cudaMemcpyDeviceToHost;
+int main() {
+    cudaMemcpyKind h2d = cudaMemcpyHostToDevice, d2h = cudaMemcpyDeviceToHost;
 
-    printf("Enter size: ");
-    int n; scanf("%d", &n);
+    printf("Enter vector size: ");
+    int n; 
+    scanf("%d", &n);
 
-    int x[n], y[n], a, *d_x, *d_y, size = sizeof(int);
-    cudaMalloc((void**)&d_x, n * size);
-    cudaMalloc((void**)&d_y, n * size);
+    int x[n], y[n], alpha, *d_x, *d_y;
+    cudaMalloc((void**)&d_x, sizeof(int) * n);
+    cudaMalloc((void**)&d_y, sizeof(int) * n);
 
-    printf("Enter x: ");
-    for(int i = 0; i < n; i++) scanf("%d", x + i);
-    cudaMemcpy(d_x, x, size * n, htd);
+    printf("Enter x vector: ");
+    for (int i = 0; i < n; i++) 
+        scanf("%d", x + i);
+    cudaMemcpy(d_x, x, sizeof(int) * n, h2d);
 
-    printf("Enter y: ");
-    for(int i = 0; i < n; i++) scanf("%d", y + i);
-    cudaMemcpy(d_y, y, size * n, htd);
+    printf("Enter y vector: ");
+    for (int i = 0; i < n; i++) 
+        scanf("%d", y + i);
+    cudaMemcpy(d_y, y, sizeof(int) * n, h2d);
 
-    printf("Enter a: ");
-    scanf("%d", &a);
+    printf("Enter alpha: ");
+    scanf("%d", &alpha);
 
-    linear<<<1, n>>>(a, d_x, d_y);
-    cudaMemcpy(y, d_y, size * n, dth);
+    linTransform<<<1, n>>>(alpha, d_x, d_y);
+    cudaMemcpy(y, d_y, sizeof(int) * n, d2h);
 
-    for(int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
         printf("%d ", y[i]);
     printf("\n");
 
+    cudaFree(d_x);
+    cudaFree(d_y);
+
+    return 0;
 }
 
+Q4: Write a program in CUDA to process a 1D array containing angles in radians to generate
+sine of the angles in the output array. Use appropriate function.
 
+#include <stdio.h>
+#include <math.h> // Include math header for sin function
 
-q4)
-
-#include<stdio.h>
-
-__global__ void compute_sine(float* angle, float* sine){
-    int i = threadIdx.x;
-    sine[i] = sin(angle[i]);
+// Kernel to compute sine of angles
+__global__ void calcSine(float* angles, float* sines) {
+    int idx = threadIdx.x;
+    sines[idx] = sin(angles[idx]); // Calculate sine of angle
 }
 
-int main(){
+int main() {
     int n;
-    printf("Enter size: ");
+    printf("Enter number of angles: ");
     scanf("%d", &n);
 
-    float angle[n], sine[n], *d_angle, *d_sine;
-    cudaMalloc((void**)&d_angle, sizeof(float) * n);
-    cudaMalloc((void**)&d_sine, sizeof(float) * n);
+    float angles[n], sines[n], *d_angles, *d_sines;
+    cudaMalloc((void**)&d_angles, sizeof(float) * n);
+    cudaMalloc((void**)&d_sines, sizeof(float) * n);
 
-    printf("Enter array: ");
-    for(int i = 0; i < n; i++) scanf("%f", angle + i);
-    cudaMemcpy(d_angle, angle, sizeof(float) * n, cudaMemcpyHostToDevice);
+    printf("Enter angles in radians: ");
+    for (int i = 0; i < n; i++) 
+        scanf("%f", angles + i);
+    cudaMemcpy(d_angles, angles, sizeof(float) * n, cudaMemcpyHostToDevice);
 
-    compute_sine<<<1, n>>>(d_angle, d_sine);
-    cudaMemcpy(sine, d_sine, sizeof(float) * n, cudaMemcpyDeviceToHost);
+    calcSine<<<1, n>>>(d_angles, d_sines);
+    cudaMemcpy(sines, d_sines, sizeof(float) * n, cudaMemcpyDeviceToHost);
 
-    for(int i = 0; i < n; i++) printf("%f ", sine[i]);
+    for (int i = 0; i < n; i++) 
+        printf("%f ", sines[i]);
     printf("\n");
 
-    cudaFree(d_angle);
-    cudaFree(d_sine);
+    cudaFree(d_angles);
+    cudaFree(d_sines);
+
+    return 0;
 }
 
