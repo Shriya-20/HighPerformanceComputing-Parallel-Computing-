@@ -1,0 +1,185 @@
+outputs
+
+week7
+
+2.
+
+Enter n, m: 3 4
+Enter array: 1
+2
+3
+Enter mask: 4
+4
+5
+3
+3 11 23 
+
+
+3.
+Enter size: 3
+Enter x: 2
+3
+2
+Enter y: 5
+3
+2
+Enter a: 2
+9 9 6 
+
+
+
+4.
+(base) mca@mca-lab6:~/220968020/hpc/week7$ ./a.out
+Enter size: 4
+Enter array: 1
+2
+3
+4
+0.841471 0.909297 0.141120 -0.756802 
+
+week8
+
+1.
+
+Enter n: 5
+Enter string size: 3
+Enter s1: shr
+shrshrshrshrshr
+
+
+2.
+Number of words: 3
+Enter string: i drink tea
+i knird aet 
+
+
+3.
+Number of words: 4
+Enter string: i love to drink tea
+Enter substring: drink
+1
+
+Number of words: 4
+Enter string: cat dof cat ant
+Enter substring: cat
+2
+
+
+4.
+
+Enter string: my name is shriya
+ayirhs si eman ym
+
+
+
+week9
+
+1.
+(base) mca@mca-lab6:~/220968020/hpc/week9$ nvcc q1.cu
+(base) mca@mca-lab6:~/220968020/hpc/week9$ ./a.out
+Enter m, n: 2 3
+Enter matrix: 1
+2
+3
+4
+5
+6
+1 2 3 
+16 25 36 
+
+2.
+Enter m,n:4 5
+Enter a: 1
+2
+3
+4
+5
+6
+8
+1
+2
+1
+2
+1
+2
+3
+4
+2
+1
+6
+3
+2
+Enter b: 4
+32
+2
+2
+2
+2
+2
+2
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+5 34 5 6 7 
+8 10 3 3 2 
+3 2 3 4 5 
+3 2 7 4 3 
+
+3.
+Enter m, n for a: 2 2
+Enter m, n for b: 2 2
+Enter a: 1
+2
+3
+4
+Enter b: 5
+6
+4
+3
+13 12 
+31 30 
+13 12 
+31 30 
+13 12 
+31 30 
+
+
+4.Not there
+
+(base) mca@mca-lab6:~/220968020/hpc/week9$ ./a.out
+Enter m, n: 2 2
+Enter matrix: 1
+2
+3
+4
+1 2 
+3 4 
+
+
+Enter m, n: 2 2
+Enter matrix: 3.4 3 5 1.2
+3 9 
+1009410138 21929 
+
+Enter m, n: 2 2
+Enter matrix: 3.14 3.14 3.14 3.14
+3 9 
+456249434 22080 
+
+
+
+
+
+
+
+
+
