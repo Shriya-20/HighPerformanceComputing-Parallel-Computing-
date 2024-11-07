@@ -1,0 +1,139 @@
+Q1. Write a program in CUDA to improve performance of 1D parallel convolution using constant memory.
+
+#include <stdio.h>
+
+__constant__ int array[100], filter[20];
+
+// CUDA kernel for 1D convolution using constant memory
+__global__ void convolution(int* result, int n, int m) {
+    int i = threadIdx.x, j = threadIdx.y;
+
+    // Perform atomic addition to handle concurrent writes
+    if (m - 1 - j + i < n) 
+        atomicAdd(result + (m - 1 - j + i), array[i] * filter[j]);
+}
+
+int main() {
+    int n, m, s = sizeof(int);
+    printf("Enter n, m: ");
+    scanf("%d %d", &n, &m);
+
+    int x[n], f[m], r[n];
+    printf("Enter array: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", x + i);
+        r[i] = 0; // Initialize result array
+    }
+
+    printf("Enter mask: ");
+    for (int i = 0; i < m; i++)
+        scanf("%d", f + i);
+
+    int *d_r;
+    cudaMemcpyToSymbol(array, x, sizeof(int) * n); // Copy input array to constant memory
+    cudaMemcpyToSymbol(filter, f, sizeof(int) * m); // Copy mask to constant memory
+    cudaMalloc((void**)&d_r, s * n); // Allocate memory for result on device
+
+    dim3 threads(n, m);
+    convolution<<<1, threads>>>(d_r, n, m); // Launch kernel with 2D thread configuration
+    cudaMemcpy(r, d_r, s * n, cudaMemcpyDeviceToHost); // Copy result back to host
+
+    for (int i = 0; i < n; i++)
+        printf("%d ", r[i]);
+    printf("\n");
+}
+
+Q2. Write a program in CUDA which performs tiled 1D convolution operation on the input N elements using a mask array with M elements to produce the resultant N elements.
+
+#include <stdio.h>
+
+// CUDA kernel for tiled 1D convolution
+__global__ void convolution(int* x, int* f, int* r, int n, int m) {
+    __shared__ int x_shared[4];
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+    // Load input into shared memory
+    if (i < n) x_shared[threadIdx.x] = x[i];
+    __syncthreads();
+
+    // Perform convolution using shared memory
+    for (int j = 0; j < m; j++)
+        if (i + j < n) 
+            atomicAdd(&r[i + j], x_shared[threadIdx.x] * f[m - 1 - j]);       
+}
+
+int main() {
+    cudaMemcpyKind htd = cudaMemcpyHostToDevice,
+                   dth = cudaMemcpyDeviceToHost;
+
+    int n, m, s = sizeof(int);
+    printf("Enter n, m: ");
+    scanf("%d %d", &n, &m);
+
+    int x[n], f[m], r[n];
+    printf("Enter array: ");
+    for (int i = 0; i < n; i++) {
+        scanf("%d", x + i);
+        r[i] = 0; // Initialize result array
+    }
+
+    printf("Enter mask: ");
+    for (int i = 0; i < m; i++)
+        scanf("%d", f + i);
+
+    int *d_x, *d_f, *d_r;
+    cudaMalloc((void**)&d_x, s * n); 
+    cudaMalloc((void**)&d_f, s * m); 
+    cudaMalloc((void**)&d_r, s * n);
+
+    cudaMemcpy(d_x, x, s * n, htd); // Copy input array to device
+    cudaMemcpy(d_f, f, s * m, htd); // Copy mask to device
+    cudaMemcpy(d_r, r, s * n, htd); // Initialize result array on device
+    
+    convolution<<<ceil(n / 4.0), 4>>>(d_x, d_f, d_r, n, m); // Launch kernel with block size of 4
+    cudaMemcpy(r, d_r, s * n, dth); // Copy result back to host
+
+    for (int i = 0; i < n; i++)
+        printf("%d ", r[i]);
+    printf("\n");
+}
+
+Q3. Write a program in CUDA to perform inclusive scan algorithm.
+
+#include <stdio.h>
+
+// CUDA kernel for inclusive scan
+__global__ void inclusive_scan(int* a, int size) {
+    __shared__ int a_shared[4];
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Load input into shared memory
+    if (i < size) a_shared[threadIdx.x] = a[i];
+    __syncthreads();
+
+    // Perform inclusive scan using atomic addition
+    for (int x = i + 1; x < size; x++) 
+        atomicAdd(&a[x], a_shared[i]);
+}
+
+int main() {
+    int size;
+    printf("Enter size: ");
+    scanf("%d", &size);
+
+    int a[size];
+    printf("Enter array: ");
+    for (int i = 0; i < size; i++) 
+        scanf("%d", a + i);
+
+    int *d_a;
+    cudaMalloc(&d_a, sizeof(int) * size); // Allocate memory on device
+    cudaMemcpy(d_a, a, sizeof(int) * size, cudaMemcpyHostToDevice); 
+
+    inclusive_scan<<<ceil(size / 4.0), 4>>>(d_a, size); // Launch kernel with block size of 4
+    cudaMemcpy(a, d_a, sizeof(int) * size, cudaMemcpyDeviceToHost); 
+    for (int i = 0; i < size; i++) 
+        printf("%d ", a[i]);
+    printf("\n");
+}

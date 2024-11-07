@@ -7,20 +7,20 @@ Q1: Write a program in CUDA to add two vectors using
 
 // Kernel to add two vectors using block size as N
 __global__ void addBlocks(float *res, float *v1, float *v2) {
-    int idx = blockIdx.x;
-    res[idx] = v1[idx] + v2[idx];     
+    int i = blockIdx.x;
+    res[i] = v1[i] + v2[i];     
 }
 
 // Kernel to add two vectors using N threads
 __global__ void addThreads(float *res, float *v1, float *v2) {
-    int idx = threadIdx.x;
-    res[idx] = v1[idx] + v2[idx];     
+    int i = threadIdx.x;
+    res[i] = v1[i] + v2[i];     
 }
 
 // Kernel to add two vectors with varying block size
 __global__ void addVarBlocks(float *res, float *v1, float *v2, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; 
-    if (idx < n) res[idx] = v1[idx] + v2[idx];     
+    int i = blockIdx.x * blockDim.x + threadIdx.x; 
+    if (i < n) res[i] = v1[i] + v2[i];     
 }
 
 int main() {
